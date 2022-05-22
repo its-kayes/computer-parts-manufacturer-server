@@ -40,14 +40,21 @@ async function run() {
             let query = {_id: ObjectId(id)};
             let data = await partsCollection.findOne(query);
             res.send(data);
-        })
+        });
 
         // Order 
         app.post('/orders', async(req, res)=> {
             let data = req.body;
             let result = await ordersCollection.insertOne(data);
             res.send(result);
-        })
+        });
+
+        // Order Load
+        app.get('/orders', async(req, res)=> {
+            let query = {}
+            let data = await ordersCollection.find(query).toArray();
+            res.send(data);
+        });
 
     }
 
