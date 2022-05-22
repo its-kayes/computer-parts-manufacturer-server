@@ -17,12 +17,21 @@ async function run() {
     try {
         await client.connect();
         let partsCollection = client.db("partsdb").collection("parts");
+        let reviewsCollection = client.db("partsdb").collection("reviews");
 
+        // Load Parts
         app.get('/parts', async(req, res)=> {
             let query = {}
             let data = await partsCollection.find(query).toArray();
             res.send(data);
-        })
+        });
+
+        // Reviews Data Load
+        app.get('/reviews', async(req, res) => {
+            let query = {}
+            let data = await reviewsCollection.find(query).toArray();
+            res.send(data);
+        });
     }
 
     finally{
