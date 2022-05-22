@@ -18,6 +18,7 @@ async function run() {
         await client.connect();
         let partsCollection = client.db("partsdb").collection("parts");
         let reviewsCollection = client.db("partsdb").collection("reviews");
+        let ordersCollection = client.db("partsdb").collection("orders")
 
         // Load Parts
         app.get('/parts', async(req, res)=> {
@@ -33,11 +34,19 @@ async function run() {
             res.send(data);
         });
 
+        // Load Single Parts
         app.get('/parts/:id', async(req, res)=> {
             let id = req.params.id;
             let query = {_id: ObjectId(id)};
             let data = await partsCollection.findOne(query);
             res.send(data);
+        })
+
+        // Order 
+        app.post('/orders', async(req, res)=> {
+            let data = req.body;
+            let result = await ordersCollection.insertOne(data);
+            res.send(result);
         })
 
     }
