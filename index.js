@@ -51,9 +51,10 @@ async function run() {
         });
 
         // Order Load
-        app.get('/orders', async(req, res)=> {
-            let query = {}
-            let data = await ordersCollection.find(query).toArray();
+        app.get('/orders/:email', async(req, res)=> {
+            let email = req.params.email;
+            // let query = {}
+            let data = await ordersCollection.find({email: email}).toArray();
             res.send(data);
         });
 
