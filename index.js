@@ -18,7 +18,8 @@ async function run() {
         await client.connect();
         let partsCollection = client.db("partsdb").collection("parts");
         let reviewsCollection = client.db("partsdb").collection("reviews");
-        let ordersCollection = client.db("partsdb").collection("orders")
+        let ordersCollection = client.db("partsdb").collection("orders");
+        let usersCollection = client.db("partsdb").collection("users");
 
         // Load Parts
         app.get('/parts', async(req, res)=> {
@@ -63,6 +64,26 @@ async function run() {
             res.json(result);
         })
 
+        // User Update
+        app.put('/users/:email', async(req, res) => {
+            let email = req.params.email;
+            let data = req.body;
+            let filter = {email: email};
+            let option = { upsert: true };
+            let updateInfo = {
+                $set: data,
+            }
+            let result = await usersCollection.updateOne(filter, updateInfo, option);
+            res.send(result);
+        });
+
+        // Get User Info 
+        app.get('/users/:email', async(req, res)=> {
+            let email = req.params.email;
+            let query = {email: email};
+            let data = await usersCollection.findOne(query);
+            res.send(data)
+        })
     }
 
     finally{
