@@ -151,21 +151,47 @@ async function run() {
         });
 
         // Get User data
-        app.get('/allusers', async(req, res)=> {
+        app.get('/allusers', async (req, res) => {
             let result = await usersCollection.find({}).toArray();
             res.send(result);
         })
 
-
+        // Make Admin
         app.put('/allusers/admin/:email', async (req, res) => {
             let email = req.params.email;
             let filter = { email: email };
             let updateUser = {
-                $set: {role: 'admin'},
+                $set: { role: 'admin' },
             };
             let result = await usersCollection.updateOne(filter, updateUser);
             res.send(result);
         });
+
+
+        app.get('/user/:email', async(req, res) => {
+            let email = req.params.email;
+            let user = await usersCollection.findOne({email: email});
+            let isAdmin = user.role === 'admin';
+            res.send({admin: isAdmin})
+        })
+
+
+        // app.put('/allusers/admin/:email', async (req, res) => {
+        //     let email = req.params.email;
+        //     let requester = req.decoded.email;
+        //     let check = await usersCollection.findOne({ email: requester });
+        //     if (check.role === 'admin') {
+        //         let filter = { email: email };
+        //         let updateUser = {
+        //             $set: { role: 'admin' },
+        //         };
+        //         let result = await usersCollection.updateOne(filter, updateUser);
+        //         return res.send(result);
+        //     }
+        //     else {
+        //         res.status(403).send({ massage: 'Forbidden' });
+        //     }
+        // });
     }
 
     finally {
