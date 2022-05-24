@@ -33,19 +33,18 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
 
 function verifyJWT(req, res, next) {
-    let authHeader = req.headers.authorization;
+    const authHeader = req.headers.authorization;
     if (!authHeader) {
-        return res.status(401).send({ message: 'UnAuthorization Access' });
+        return res.status(401).send({ message: 'UnAuthorized access' });
     }
-    let token = authHeader.split(' ')[1];
+    const token = authHeader.split(' ')[1];
+    console.log(token);
     jwt.verify(token, process.env.SECRET_KEY, function (err, decoded) {
         if (err) {
-            return res.status(403).send({ massage: 'Forbidden Access' });
+            return res.status(403).send({ message: 'Forbidden access' })
         }
         req.decoded = decoded;
-        console.log(decoded);
-        next()
-
+        next();
     });
 }
 
@@ -90,11 +89,21 @@ async function run() {
         });
 
         // Order Load
-        app.get('/orders/:email',  async (req, res) => {
+        app.get('/orders/:email', async (req, res) => {
             let email = req.params.email;
+            // let decodedEmail = req.decoded.email;
+            // console.log(decodedEmail);
+            // if (email === decodedEmail) {
+            //     let data = await ordersCollection.find({ email: email }).toArray();
+            //     return res.send(data);
+            // }
+            // else{
+            //     return res.status(403).send({message: 'Forbidden Access'});
+            // }
             // let query = {}
             // let authorization = req.headers.authorization;
             // console.log('auth header', authorization);
+
             let data = await ordersCollection.find({ email: email }).toArray();
             res.send(data);
         });
@@ -139,6 +148,23 @@ async function run() {
             let result = await usersCollection.updateOne(filter, updateUser, option);
             let accessToken = jwt.sign({ email: email }, process.env.SECRET_KEY, { expiresIn: '30d' })
             res.send({ result, token: accessToken });
+        });
+
+        // Get User data
+        app.get('/allusers', async(req, res)=> {
+            let result = await usersCollection.find({}).toArray();
+            res.send(result);
+        })
+
+
+        app.put('/allusers/admin/:email', async (req, res) => {
+            let email = req.params.email;
+            let filter = { email: email };
+            let updateUser = {
+                $set: {role: 'admin'},
+            };
+            let result = await usersCollection.updateOne(filter, updateUser);
+            res.send(result);
         });
     }
 
