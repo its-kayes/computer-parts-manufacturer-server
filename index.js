@@ -34,12 +34,13 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
 function verifyJWT(req, res, next) {
     const authHeader = req.headers.authorization;
+    // console.log(process.env.SECRET_KEY);
     if (!authHeader) {
         return res.status(401).send({ message: 'UnAuthorized access' });
     }
     const token = authHeader.split(' ')[1];
-    console.log(token);
-    jwt.verify(token, process.env.SECRET_KEY, function (err, decoded) {
+    // console.log(token);
+    jwt.verify(token, 'kayessecret', function (err, decoded) {
         if (err) {
             return res.status(403).send({ message: 'Forbidden access' })
         }
@@ -89,23 +90,24 @@ async function run() {
         });
 
         // Order Load
-        app.get('/orders/:email', async (req, res) => {
+        app.get('/orders/:email', verifyJWT, async (req, res) => {
             let email = req.params.email;
-            // let decodedEmail = req.decoded.email;
-            // console.log(decodedEmail);
-            // if (email === decodedEmail) {
-            //     let data = await ordersCollection.find({ email: email }).toArray();
-            //     return res.send(data);
-            // }
-            // else{
-            //     return res.status(403).send({message: 'Forbidden Access'});
-            // }
+            console.log(email);
+            const decodedEmail = req.decoded.email;
+            console.log(decodedEmail);
+            if (email === decodedEmail) {
+                let data = await ordersCollection.find({ email: email }).toArray();
+                return res.send(data);
+            }
+            else {
+                return res.status(403).send({ message: 'Forbidden Access' });
+            }
             // let query = {}
             // let authorization = req.headers.authorization;
             // console.log('auth header', authorization);
 
-            let data = await ordersCollection.find({ email: email }).toArray();
-            res.send(data);
+            // let data = await ordersCollection.find({ email: email }).toArray();
+            // res.send(data);
         });
 
         // Post Reviews
@@ -146,7 +148,7 @@ async function run() {
                 $set: user,
             };
             let result = await usersCollection.updateOne(filter, updateUser, option);
-            let accessToken = jwt.sign({ email: email }, process.env.SECRET_KEY, { expiresIn: '30d' })
+            let accessToken = jwt.sign({ email: email }, 'kayessecret')
             res.send({ result, token: accessToken });
         });
 
@@ -157,41 +159,41 @@ async function run() {
         })
 
         // Make Admin
-        app.put('/allusers/admin/:email', async (req, res) => {
-            let email = req.params.email;
-            let filter = { email: email };
-            let updateUser = {
-                $set: { role: 'admin' },
-            };
-            let result = await usersCollection.updateOne(filter, updateUser);
-            res.send(result);
-        });
+        // app.put('/allusers/admin/:email', async (req, res) => {
+        //     let email = req.params.email;
+        //     let filter = { email: email };
+        //     let updateUser = {
+        //         $set: { role: 'admin' },
+        //     };
+        //     let result = await usersCollection.updateOne(filter, updateUser);
+        //     res.send(result);
+        // });
 
 
-        app.get('/user/:email', async(req, res) => {
+        app.get('/user/:email', async (req, res) => {
             let email = req.params.email;
-            let user = await usersCollection.findOne({email: email});
+            let user = await usersCollection.findOne({ email: email });
             let isAdmin = user.role === 'admin';
-            res.send({admin: isAdmin})
+            res.send({ admin: isAdmin })
         })
 
 
-        // app.put('/allusers/admin/:email', async (req, res) => {
-        //     let email = req.params.email;
-        //     let requester = req.decoded.email;
-        //     let check = await usersCollection.findOne({ email: requester });
-        //     if (check.role === 'admin') {
-        //         let filter = { email: email };
-        //         let updateUser = {
-        //             $set: { role: 'admin' },
-        //         };
-        //         let result = await usersCollection.updateOne(filter, updateUser);
-        //         return res.send(result);
-        //     }
-        //     else {
-        //         res.status(403).send({ massage: 'Forbidden' });
-        //     }
-        // });
+        app.put('/allusers/admin/:email', async (req, res) => {
+            let email = req.params.email;
+            let requester = req.decoded.email;
+            let check = await usersCollection.findOne({ email: requester });
+            if (check.role === 'admin') {
+                let filter = { email: email };
+                let updateUser = {
+                    $set: { role: 'admin' },
+                };
+                let result = await usersCollection.updateOne(filter, updateUser);
+                return res.send(result);
+            }
+            else {
+                res.status(403).send({ massage: 'Forbidden' });
+            }
+        });
     }
 
     finally {
