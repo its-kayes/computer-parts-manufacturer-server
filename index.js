@@ -178,9 +178,10 @@ async function run() {
         })
 
 
-        app.put('/allusers/admin/:email', async (req, res) => {
+        app.put('/allusers/admin/:email', verifyJWT, async (req, res) => {
             let email = req.params.email;
             let requester = req.decoded.email;
+            console.log(requester);
             let check = await usersCollection.findOne({ email: requester });
             if (check.role === 'admin') {
                 let filter = { email: email };
