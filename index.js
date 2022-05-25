@@ -169,7 +169,7 @@ async function run() {
         //     res.send(result);
         // });
 
-
+        // Get User data for admin
         app.get('/user/:email', async (req, res) => {
             let email = req.params.email;
             let user = await usersCollection.findOne({ email: email });
@@ -177,7 +177,7 @@ async function run() {
             res.send({ admin: isAdmin })
         })
 
-
+        // Make Admin  
         app.put('/allusers/admin/:email', verifyJWT, async (req, res) => {
             let email = req.params.email;
             let requester = req.decoded.email;
@@ -195,6 +195,13 @@ async function run() {
                 res.status(403).send({ massage: 'Forbidden' });
             }
         });
+
+        // Add Product for Admin
+        app.post('/products', async(req, res) => {
+            let data = req.body;
+            let result = await partsCollection.insertOne(data);
+            res.send(result);
+        })
     }
 
     finally {
