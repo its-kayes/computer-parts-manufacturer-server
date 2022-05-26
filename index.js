@@ -201,6 +201,14 @@ async function run() {
             let data = req.body;
             let result = await partsCollection.insertOne(data);
             res.send(result);
+        });
+
+        // Delete Parts
+        app.delete('/part/:id', async(req, res) => {
+            let id = req.params.id;
+            let query = {_id: ObjectId(id)};
+            let data = await partsCollection.deleteOne(query)
+            res.send(data);
         })
     }
 
