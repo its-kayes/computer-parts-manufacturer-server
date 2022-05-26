@@ -86,12 +86,6 @@ async function run() {
             else {
                 return res.status(403).send({ message: 'Forbidden Access' });
             }
-            // let query = {}
-            // let authorization = req.headers.authorization;
-            // console.log('auth header', authorization);
-
-            // let data = await ordersCollection.find({ email: email }).toArray();
-            // res.send(data);
         });
 
         // Post Reviews
@@ -243,14 +237,6 @@ async function run() {
 
     }
 }
-
-
-
-
-
-
-
-
 
 
 run().catch(console.dir);
