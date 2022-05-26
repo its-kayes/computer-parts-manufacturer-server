@@ -1,10 +1,11 @@
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId, Transaction } = require('mongodb');
 const express = require('express');
 const cors = require('cors');
 let jwt = require('jsonwebtoken');
 require('dotenv').config();
 const port = process.env.PORT || 5000;
 let app = express();
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 app.use(cors());
 app.use(express.json());
@@ -13,24 +14,6 @@ app.use(express.json());
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.yffmf.mongodb.net/?retryWrites=true&w=majority`;
 
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
-
-// function verifyJWT (req, res, next) {
-//     let authHeader = req.headers.authorization;
-//     if (!authHeader) {
-//         return res.status(401).send({ massage: 'UnAuthorized Access' });
-//     }
-//     let token = authHeader.split(' ')[1];
-//     jwt.verify(token, process.env.SECRET_KEY, function (err, decoded) {
-//         if(err) {
-//             return res.status(403).send({ massage: 'Forbidden Access' });
-//         }
-//         req.decoded = decoded;
-//         next();
-//         // console.log(decoded) // bar
-//     });
-// }
-
-
 
 function verifyJWT(req, res, next) {
     const authHeader = req.headers.authorization;
@@ -59,6 +42,7 @@ async function run() {
         let ordersCollection = client.db("partsdb").collection("orders");
         let usersInfoCollection = client.db("partsdb").collection("users");
         let usersCollection = client.db("partsdb").collection("allusers");
+        let paymentCollection = client.db("partsdb").collection("payments");
 
         // Load Parts
         app.get('/parts', async (req, res) => {
@@ -197,19 +181,65 @@ async function run() {
         });
 
         // Add Product for Admin
-        app.post('/products', async(req, res) => {
+        app.post('/products', async (req, res) => {
             let data = req.body;
             let result = await partsCollection.insertOne(data);
             res.send(result);
         });
 
         // Delete Parts
-        app.delete('/part/:id', async(req, res) => {
+        app.delete('/part/:id', async (req, res) => {
             let id = req.params.id;
-            let query = {_id: ObjectId(id)};
+            let query = { _id: ObjectId(id) };
             let data = await partsCollection.deleteOne(query)
             res.send(data);
+        });
+
+        // Manage orders
+        app.get('/manageorders', async (req, res) => {
+            let query = {}
+            let data = await ordersCollection.find(query).toArray();
+            res.send(data);
+        });
+
+        // Get Order by ID
+        app.get('/payment/:id', async (req, res) => {
+            let id = req.params.id;
+            let query = { _id: ObjectId(id) };
+            let data = await ordersCollection.findOne(query);
+            res.send(data);
+        });
+
+        // Payment Post
+        app.post('/create-payment-intent', async (req, res) => {
+            const order = req.body;
+            console.log(order);
+            const price = order.totalPrice;
+            const amount = price * 100;
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            });
+            res.send({ clientSecret: paymentIntent.client_secret })
+        });
+
+        // Store Payment Data
+        app.patch('/order/:id', async(req, res)=> {
+            let id = req.params.id;
+            let payment = req.body;
+            let query = {_id: ObjectId(id)};
+            let updateData = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId,
+                }
+            }
+            let data = await paymentCollection.insertOne(payment);
+            let orderUpdate = await ordersCollection.updateOne(query, updateData);
+            res.send(updateData)
         })
+
     }
 
     finally {
