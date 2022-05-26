@@ -142,17 +142,6 @@ async function run() {
             res.send(result);
         })
 
-        // Make Admin
-        // app.put('/allusers/admin/:email', async (req, res) => {
-        //     let email = req.params.email;
-        //     let filter = { email: email };
-        //     let updateUser = {
-        //         $set: { role: 'admin' },
-        //     };
-        //     let result = await usersCollection.updateOne(filter, updateUser);
-        //     res.send(result);
-        // });
-
         // Get User data for admin
         app.get('/user/:email', async (req, res) => {
             let email = req.params.email;
@@ -238,7 +227,15 @@ async function run() {
             let data = await paymentCollection.insertOne(payment);
             let orderUpdate = await ordersCollection.updateOne(query, updateData);
             res.send(updateData)
-        })
+        });
+
+        // Delete order
+        app.delete('/order/:id', async (req, res) => {
+            let id = req.params.id;
+            let query = { _id: ObjectId(id) };
+            let data = await ordersCollection.deleteOne(query)
+            res.send(data);
+        });
 
     }
 
